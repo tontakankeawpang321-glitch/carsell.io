@@ -811,6 +811,7 @@ function viewPost(id) {
 function openSlider(i) {
     sliderIndex = i || 0; 
     updateSlider();
+    // *** Logic Change: Close view dialog when opening slider ***
     if (dom.viewDlg.open) { dom.viewDlg.close(); isSliderReopeningView = true; }
     dom.slider.classList.remove('hidden');
     setTimeout(() => dom.slider.classList.replace('opacity-0', 'opacity-100'), 10);
@@ -820,6 +821,7 @@ function closeImageSlider() {
     dom.slider.classList.replace('opacity-100', 'opacity-0');
     setTimeout(() => {
         dom.slider.classList.add('hidden');
+        // *** Logic Change: Reopen view dialog if it was closed ***
         if (isSliderReopeningView) { dom.viewDlg.showModal(); isSliderReopeningView = false; }
         else toggleBodyScroll(false);
     }, 300);
@@ -872,8 +874,11 @@ async function savePost() {
 }
 
 async function deletePost(id) {
+    // *** Logic Change: Close view dialog first so Alert shows cleanly ***
     closeViewModal();
+    
     const res = await Swal.fire({ title: 'ลบประกาศ?', text: "ยืนยันการลบข้อมูลยานพาหนะนี้", icon: 'warning', showCancelButton: true, confirmButtonText: 'ยืนยัน', cancelButtonText: 'ยกเลิก', confirmButtonColor: '#dc2626', cancelButtonColor: '#64748b' });
+    
     if (res.isConfirmed) {
         try {
             await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: "delete", id: id }) });
@@ -881,7 +886,11 @@ async function deletePost(id) {
         } catch(e) { 
             posts = posts.filter(p => p.id !== id); applyFilters(); Swal.fire('สำเร็จ', 'ลบข้อมูลเรียบร้อย (Demo)', 'success');
         }
-    } else { const p = posts.find(x => x.id === id); if(p) viewPost(id); }
+    } else { 
+        // *** Logic Change: Reopen view dialog if cancelled (Like before) ***
+        const p = posts.find(x => x.id === id); 
+        if(p) viewPost(id); 
+    }
 }
 
 function fillDemoData() {
