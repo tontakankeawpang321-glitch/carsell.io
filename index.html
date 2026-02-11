@@ -569,7 +569,8 @@ const defaultPosts = [
 
 let posts = [];
 let filteredPosts = [];
-let favorites = JSON.parse(localStorage.getItem('thai_auto_favs')) || [];
+// *** FIX: Map existing storage to String to handle legacy number IDs ***
+let favorites = (JSON.parse(localStorage.getItem('thai_auto_favs')) || []).map(String);
 let currentPage = 1;
 const ITEMS_PER_PAGE = 10;
 let formImages = [];
@@ -658,7 +659,8 @@ async function loadPosts() {
             } catch(e) { parsedImages = [p.images]; }
 
             return {
-                ...p, 
+                ...p,
+                id: String(p.id), // Ensure ID is string for Favorites matching
                 title: String(p.title || ""),
                 type: String(p.type || "รถอื่นๆ"), // New Field
                 year: p.year || "-", // New Field
@@ -896,10 +898,12 @@ function updateSlider() { dom.sliderImg.src = sliderImages[sliderIndex]; dom.sli
 
 // Favorites Logic
 function toggleFavorite(id) {
-    if (favorites.includes(id)) {
-        favorites = favorites.filter(fid => fid !== id);
+    // *** FIX: Cast ID to String for consistency ***
+    const strId = String(id);
+    if (favorites.includes(strId)) {
+        favorites = favorites.filter(fid => fid !== strId);
     } else {
-        favorites.push(id);
+        favorites.push(strId);
     }
     localStorage.setItem('thai_auto_favs', JSON.stringify(favorites));
     updateFavUI();
@@ -910,7 +914,8 @@ function updateFavUI() {
     posts.forEach(p => {
          const el = document.getElementById(`fav-icon-${p.id}`);
          if(el) {
-             if(favorites.includes(p.id)) { 
+             // *** FIX: Ensure we check string vs string ***
+             if(favorites.includes(String(p.id))) { 
                  el.classList.remove('fa-regular', 'text-white', 'drop-shadow-md'); 
                  el.classList.add('fa-solid', 'text-red-500'); 
              } else { 
@@ -931,7 +936,8 @@ function updateFavUI() {
 
 function openFavorites() {
     dom.favList.innerHTML = '';
-    const favPosts = posts.filter(p => favorites.includes(p.id));
+    // *** FIX: Ensure we match string IDs ***
+    const favPosts = posts.filter(p => favorites.includes(String(p.id)));
 
     if (favPosts.length === 0) {
         dom.favList.innerHTML = `
@@ -1000,7 +1006,7 @@ async function savePost() {
     } catch(e) {
         // Fallback to Local Mock Add
         Swal.fire({ icon: 'success', title: 'ลงประกาศสำเร็จ (Demo)', text: 'ข้อมูลถูกเพิ่มในโหมดสาธิต', confirmButtonColor: '#1e3a8a' });
-        posts.unshift({...payload, id: Date.now(), price: Number(payload.price)}); 
+        posts.unshift({...payload, id: String(Date.now()), price: Number(payload.price)}); 
         applyFilters(); 
         closeModal();
     } finally { 
